@@ -39,6 +39,9 @@ def main():
     "--profile", "-p", default=None, help=("The profile to save the workspace to.")
 )
 @click.option(
+    "--session", "-s", default=None, help="Save all workspaces."
+)
+@click.option(
     "--swallow",
     "-s",
     default="class,instance",
@@ -57,27 +60,43 @@ def main():
     flag_value="programs_only",
     help="Only save running programs.",
 )
-def save_workspace(workspace, numeric, directory, profile, swallow, target):
+def save_workspace(workspace, numeric, directory, profile, session, swallow, target):
     """
     Save an i3 workspace's layout and running programs to a file.
     """
+    workspaces = []
     if workspace is None:
         i3 = i3ipc.Connection()
-        workspace = i3.get_tree().find_focused().workspace().name
+        workspace = i3.get_tree().find_focused().workspace()
 
     directory = util.resolve_directory(directory, profile)
+
+    if session is not None:
+        # Get all workspaces
+        i3 = i3ipc.Connection()
+        workspaces = i3.get_workspaces()
+        # make a directory with some name
+        directory = directory / session
+        print(directory)
+        # directory name should be the profile honestly
+        # file names should be the workspace names
+        # call the workspace loop to save in that directory
+    else:
+        workspaces = [workspace]
 
     # Create directory if non-existent.
     Path(directory).mkdir(parents=True, exist_ok=True)
 
-    if target != "programs_only":
-        # Save workspace layout to file.
-        swallow_criteria = swallow.split(",")
-        layout.save(workspace, numeric, directory, profile, swallow_criteria)
+    for workspace1 in workspaces:
 
-    if target != "layout_only":
-        # Save running programs to file.
-        programs.save(workspace, numeric, directory, profile)
+        if target != "programs_only":
+            # Save workspace layout to file.
+            swallow_criteria = swallow.split(",")
+            layout.save(workspace1.name, numeric, directory, profile, swallow_criteria)
+
+        if target != "layout_only":
+            # Save running programs to file.
+            programs.save(workspace1.name, numeric, directory, profile)
 
 
 @main.command("restore")
@@ -98,6 +117,9 @@ def save_workspace(workspace, numeric, directory, profile, swallow, target):
     "--profile", "-p", default=None, help=("The profile to restore the workspace from.")
 )
 @click.option(
+    "--session", "-s", default=None, help=("The session to restore the workspace from.")
+)
+@click.option(
     "--layout-only", "target", flag_value="layout_only", help="Only restore layout."
 )
 @click.option(
@@ -106,7 +128,7 @@ def save_workspace(workspace, numeric, directory, profile, swallow, target):
     flag_value="programs_only",
     help="Only restore running programs.",
 )
-def restore_workspace(workspace, numeric, directory, profile, target):
+def restore_workspace(workspace, numeric, directory, profile, session, target):
     """
     Restore i3 workspace layout and programs.
     """
@@ -120,6 +142,35 @@ def restore_workspace(workspace, numeric, directory, profile, target):
     if numeric and not workspace.isdigit():
         util.eprint("Invalid workspace number.")
         sys.exit(1)
+
+    if session is not None:
+        # Update directory to append session name
+        directory = directory / session
+        # Use a new util function to get a list of all files in the session folder
+        for file in directory.iterdir():
+            # regex match
+            if "_layout" not in file.name:
+                print(file.name)
+                continue
+            workspace1 = file.name.split("_")[1]
+            workspace_layout = layout.read(workspace1, directory, profile)
+            if "name" in workspace_layout and profile is None:
+                workspace_name = workspace_layout["name"]
+            else:
+                workspace_name = workspace1
+
+            # Switch to the workspace which we are loading.
+            i3.command(f'workspace --no-auto-back-and-forth "{workspace_name}"')
+
+            if target != "programs_only":
+                # Load workspace layout.
+                layout.restore(workspace_name, workspace_layout)
+
+            if target != "layout_only":
+                # Restore programs.
+                saved_programs = programs.read(workspace1, directory, profile)
+                programs.restore(workspace_name, saved_programs)
+        return
 
     # Get layout name from file.
     workspace_layout = layout.read(workspace, directory, profile)
