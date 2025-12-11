@@ -25,8 +25,10 @@ def filename_filter(filename):
     return filename
 
 
-def resolve_directory(directory, profile=None):
+def resolve_directory(directory, profile=None, session=None):
     directory = Path(expandvars(directory)).expanduser()
     if profile is not None:
         directory = directory / "profiles"
+    if session is not None:
+        directory = directory / "sessions"
     return directory
