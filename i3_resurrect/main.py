@@ -84,6 +84,7 @@ def save_workspace(workspace, numeric, directory, profile, session, swallow, tar
         if target != "programs_only":
             # Save workspace layout to file.
             swallow_criteria = swallow.split(",")
+            print(directory)
             layout.save(ws.name, numeric, directory, profile, swallow_criteria)
 
         if target != "layout_only":
