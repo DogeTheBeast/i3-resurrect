@@ -11,6 +11,7 @@ import psutil
 from . import config
 from . import treeutils
 from . import util
+from plugins import kitty
 
 
 def save(workspace, numeric, directory, profile):
@@ -132,9 +133,15 @@ def get_programs(workspace, numeric):
         command = [arg for arg in command if arg != ""]
 
         terminals = config.get("terminals", [])
+        plugins = config.get("plugins", [])
 
         try:
             # Obtain working directory using psutil.
+            # TODO: Could modify this to check if the terminal is kitty and if so, use the kitty remote to get the process,
+            # On restore, need to check if the restored process is kitty and if so, 
+            # if "kitty" in plugins and con["window_properties"]["class"]:
+            #     # Try the kitty workflow
+            #     kitty.save_kitty_session()
             if con["window_properties"]["class"] in terminals:
                 # If the program is a terminal emulator, get the working
                 # directory from its first subprocess.
