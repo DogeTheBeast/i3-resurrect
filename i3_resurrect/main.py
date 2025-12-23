@@ -71,6 +71,9 @@ def save_workspace(workspace, numeric, directory, profile, session, swallow, tar
         i3 = i3ipc.Connection()
         workspaces = i3.get_workspaces()
         directory = directory / session
+        if Path(directory).exists():
+            util.delete_directory(directory)
+
     elif workspace is None:
         i3 = i3ipc.Connection()
         workspace = i3.get_tree().find_focused().workspace()
@@ -84,7 +87,6 @@ def save_workspace(workspace, numeric, directory, profile, session, swallow, tar
         if target != "programs_only":
             # Save workspace layout to file.
             swallow_criteria = swallow.split(",")
-            print(directory)
             layout.save(ws.name, numeric, directory, profile, swallow_criteria)
 
         if target != "layout_only":
@@ -265,11 +267,7 @@ def remove(workspace, directory, profile, session, target):
 
     if session is not None:
         folder = Path(directory) / session
-        for file in folder.rglob('*'):
-            if file.is_file():
-                file.unlink()
-        folder.rmdir()
-        return
+        return util.delete_directory(folder)
     elif profile is not None:
         programs_filename = f"{profile}_programs.json"
         layout_filename = f"{profile}_layout.json"

@@ -24,10 +24,7 @@ def create_default():
         ],
         "window_swallow_criteria": {},
         "terminals": ["Gnome-terminal", "Alacritty"],
-        "plugins": [],
-        "kitty": {
-            "listen_socket": "",
-        }
+        "plugins": []
     }
 
     # Make config directory if it doesn't exist.
