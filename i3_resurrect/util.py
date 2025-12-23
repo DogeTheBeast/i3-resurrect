@@ -32,3 +32,10 @@ def resolve_directory(directory, profile=None, session=None):
     if session is not None:
         directory = directory / "sessions"
     return directory
+
+def delete_directory(directory):
+    if directory.exists():
+        for file in directory.rglob('*'):
+            if file.is_file():
+                file.unlink()
+        directory.rmdir()

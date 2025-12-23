@@ -27,7 +27,11 @@ def save(workspace, numeric, directory, profile):
 
     window_command_mappings = config.get("window_command_mappings", [])
 
-    programs = get_programs(workspace, numeric)
+    if "kitty" in config.get("plugins", []):
+        programs = get_programs(workspace, numeric, directory, True)
+    else:
+        programs = get_programs(workspace, numeric, directory, False)
+
 
     # Write list of commands to file as JSON.
     with programs_file.open("w") as f:
@@ -61,7 +65,7 @@ def restore(workspace_name, saved_programs):
     Restore the running programs from an i3 workspace.
     """
     # Remove already running programs from the list of program to restore.
-    running_programs = get_programs(workspace_name, False)
+    running_programs = get_programs(workspace_name, False, False, False)
     for program in running_programs:
         if program in saved_programs:
             saved_programs.remove(program)
@@ -95,7 +99,7 @@ def restore(workspace_name, saved_programs):
         i3.command(f'exec "cd \\"{working_directory}\\" && {command}"')
 
 
-def get_programs(workspace, numeric):
+def get_programs(workspace, numeric, directory, create_session=False):
     """
     Get running programs in specified workspace.
 
@@ -133,16 +137,15 @@ def get_programs(workspace, numeric):
         command = [arg for arg in command if arg != ""]
 
         terminals = config.get("terminals", [])
-        plugins = config.get("plugins", [])
 
         try:
             # Obtain working directory using psutil.
-            # TODO: Could modify this to check if the terminal is kitty and if so, use the kitty remote to get the process,
-            # On restore, need to check if the restored process is kitty and if so, 
-            # if "kitty" in plugins and con["window_properties"]["class"]:
-            #     # Try the kitty workflow
-            #     kitty.save_kitty_session()
-            if con["window_properties"]["class"] in terminals:
+            if create_session and con["window_properties"]["class"] == "kitty":
+                session_file = kitty.save_kitty_session(pid, directory)
+                working_directory = procinfo.cwd()
+                command.append("--session")
+                command.append(session_file)
+            elif con["window_properties"]["class"] in terminals:
                 # If the program is a terminal emulator, get the working
                 # directory from its first subprocess.
                 working_directory = procinfo.children()[0].cwd()
