@@ -469,6 +469,8 @@ Some examples are included in the default config. If you would like me to add
 more command mappings or terminals to the default config, please open an issue
 for it.
 
+For kitty terminal, checkout [plugins][Plugins]
+
 ### Per window swallow criteria
 
 It is also possible to configure swallow criteria on a per window basis, which
@@ -506,6 +508,50 @@ set in the config file:
   ...
 }
 ```
+
+### Plugins
+
+#### Kitty terminal
+
+**Note** This is a port of i3-restore's kitty plugin. All credit goes to the 
+original programmer GUY NAME HERE. This is currently experimental. If you face
+any bugs, please open an issue.
+
+For kitty users, the kitty plugin allows to save tabs, their display specifics 
+and the program associate with each tab.
+To enable the plugin, modify the `config.json` file with the following,
+
+```
+{
+  ...
+  "plugins": {
+    "kitty": {
+      "listen_socket": "unix:@mykitty",
+      "subprocesses": [
+        "<subprocesses to save>",
+      ]
+    }
+  }
+  ...
+}
+```
+
+And in the `kitty.conf` file,
+
+```
+# allow_remote_control needs to be set to either socket-only, socket, or yes. See
+# https://sw.kovidgoyal.net/kitty/conf/#opt-kitty.allow_remote_control for more details.
+allow_remote_control socket-only
+
+# listen_on needs to be a valid socket. See
+# https://sw.kovidgoyal.net/kitty/conf/#opt-kitty.listen_on for more details.
+listen_on unix:@mykitty
+```
+**Note**: These are just sample values. It is highly recommended that you check out Kitty's
+documentation before deciding on the values you put.
+
+All the subprograms specified in the `subprocesses` field will have an associated session
+file created to restore the running subprogram.
 
 ## Troubleshooting
 
