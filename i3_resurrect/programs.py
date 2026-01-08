@@ -11,7 +11,7 @@ import psutil
 from . import config
 from . import treeutils
 from . import util
-from plugins import kitty
+from . import kitty
 
 
 def save(workspace, numeric, directory, profile):

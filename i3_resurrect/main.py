@@ -3,6 +3,7 @@ from pathlib import Path
 
 import click
 import i3ipc
+import time
 from natsort import natsorted
 
 from . import config
@@ -169,6 +170,10 @@ def restore_workspace(workspace, numeric, directory, profile, session, target):
             # Restore programs.
             saved_programs = programs.read(ws, directory, profile)
             programs.restore(workspace_name, saved_programs)
+
+        # Quickly swapping between workspaces doesn't let the programs to
+        # spawn on correct workspaces
+        time.sleep(1)
 
 
 @main.command("ls")
