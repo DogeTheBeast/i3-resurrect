@@ -3,6 +3,7 @@ from pathlib import Path
 
 import click
 import i3ipc
+import shutil
 from natsort import natsorted
 
 from . import config
@@ -186,49 +187,25 @@ def list_workspaces(directory, item):
     directory = util.resolve_directory(directory)
 
     if item == "workspaces":
-        workspaces = []
-        for entry in directory.iterdir():
-            if entry.is_file():
-                name = entry.name
-                name = name[name.index("_") + 1 :]
-                workspace = name[: name.rfind("_")]
-                file_type = name[name.rfind("_") + 1 : name.index(".json")]
-                workspaces.append(f"Workspace {workspace} {file_type}")
-        workspaces = natsorted(workspaces)
-        for workspace in workspaces:
-            print(workspace)
+        for workspace in util.get_list_of_workspaces(directory):
+            print(f'Workspace {workspace}')
     elif item == "profiles":
         directory = directory / "profiles"
-        profiles = []
         try:
-            for entry in directory.iterdir():
-                if entry.is_file():
-                    name = entry.name
-                    profile = name[: name.rfind("_")]
-                    file_type = name[name.rfind("_") + 1 : name.index(".json")]
-                    profiles.append(f"Profile {profile} {file_type}")
-            profiles = natsorted(profiles)
-            for profile in profiles:
-                print(profile)
+            for profile in util.get_list_of_workspaces(directory, is_profile=True):
+                print(f'Profile {profile}')
         except FileNotFoundError:
             print("No profiles found")
     else:
         directory = directory / "sessions"
-        sessions = []
         try:
             for entry in directory.iterdir():
                 if entry.is_dir():
+                    sessions = []
                     name = entry.name
                     sessions.append(f"Session {name}")
-                    for file in (directory/name).iterdir():
-                        if file.is_file():
-                            name = file.name
-                            session = name[: name.rfind("_")]
-                            file_type = name[name.rfind("_") + 1 : name.index(".json")]
-                            sessions.append(f"Workspace {session} {file_type}")
-            sessions = natsorted(sessions)
-            for session in sessions:
-                print(session)
+                    for workspace in util.get_list_of_workspaces(directory/name):
+                        print(f'Workspace {workspace}')
         except FileNotFoundError:
             print("No sessions found")
 
@@ -263,11 +240,8 @@ def remove(workspace, directory, profile, session, target):
     directory = util.resolve_directory(directory, profile, session)
 
     if session is not None:
-        folder = Path(directory) / session
-        for file in folder.rglob('*'):
-            if file.is_file():
-                file.unlink()
-        folder.rmdir()
+        session_dir = Path(directory) / session
+        shutil.rmtree(session_dir)
         return
     elif profile is not None:
         programs_filename = f"{profile}_programs.json"
@@ -277,7 +251,7 @@ def remove(workspace, directory, profile, session, target):
         programs_filename = f"workspace_{workspace_id}_programs.json"
         layout_filename = f"workspace_{workspace_id}_layout.json"
     else:
-        util.eprint("--session, --profile or --workspace must be specified.")
+        util.eprint("--session, --profile, or --workspace must be specified.")
         sys.exit(1)
     programs_file = Path(directory) / programs_filename
     layout_file = Path(directory) / layout_filename
