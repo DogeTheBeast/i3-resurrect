@@ -4,7 +4,6 @@ from pathlib import Path
 import click
 import i3ipc
 import shutil
-from natsort import natsorted
 
 from . import config
 from . import layout
